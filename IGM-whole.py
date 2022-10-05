@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 # In[1]:
 
 
@@ -185,66 +182,7 @@ def back_Euler(S): # solve dN/dz = MN + S using backward Euler method, M is squa
 N = back_Euler(S_trans)
 
 
-# In[12]:
-
-
-N_dataframe = pd.DataFrame(data=N, index=z, columns=E_mid)
-
-
-# In[14]:
-
-
-plt.figure(figsize = (12,12))
-sns.heatmap(N_dataframe)
-
-
-# In[15]:
-
-
-N_log = np.zeros((mstep, mstep))
-for i in range(mstep):
-    for j in range(mstep):
-        if N[i][j] > 0:
-            N_log[i][j] = np.log10(N[i][j])
-        elif N[i][j] < 0:
-            N_log[i][j] = -np.log10(-N[i][j])
-        elif N[i][j] == 0:
-            N_log[i][j] = 0
-
-
-# In[16]:
-
-
-N_log_dataframe = pd.DataFrame(data=N_log, index=z, columns=E_mid)
-
-
-# In[17]:
-
-
-plt.figure(figsize = (12,12))
-sns.heatmap(N_log_dataframe)
-
-
-# In[23]:
-
-
-# P = -integrate(E(dN/dt V + N dV/dt)dE dt/dV)
-# V = 1/V dV/dt = 3H - dlnDelta/dt -> V = 1/(3H-dlnDelta/dt) dV/dt
-# P = -integrate(E(dN/dt 1/(3H-dlnDelta/dt) + N)dE)
-
-# N[i][j]: N[i] donte to same z and different E
-
-for i in range(mstep-1): # z
-    P = 0 # in cgs unit, 1 dyne/cm^2 = 0.1 Pa
-    
-    for j in range(mstep): # E
-        dNdz = (N[i+1][j] - N[i][j]) / (z[i+1] - z[i])
-        P += -E_mid[j] * (dNdz / (3 * H[i] - dDdz[i]) + N[i][j]) * (E[j+1] - E[j])
-        
-    print(f'P({i}) = {P}')
-
-
-# In[22]:
+# In[10]:
 
 
 with open('N.txt', 'a') as f:
