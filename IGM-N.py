@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 # In[1]:
 
 
@@ -36,7 +39,7 @@ rho_crit = 3 * H_0 * H_0 / 8 / np.pi / G
 
 # calculate overdensity evolution
 C = LCDMSphere.XCosmo(0.6774, 0.319)
-C.overdensity_evol(50., -10., 200)
+C.overdensity_evol(15., -10., 200)
 z_list = C.z_grid # redshift grid
 delta_b = C.Delta_grid # overdensity of baryon
 Delta_list = np.array([1 + x for x in delta_b]) # relative overdensity of baryon - grid
@@ -151,6 +154,18 @@ def get_M(z, Delta, theta): # parameters that only depend on redshift
     return M
 
 
+# In[ ]:
+
+
+
+
+
+# In[18]:
+
+
+S_int_E = [[S_trans[i][j]*(E[j+1]-E[j]) for j in range(len(S_trans[0]))] for i in range(len(S_trans))]
+
+
 # In[8]:
 
 
@@ -176,19 +191,112 @@ def back_Euler(S): # solve dN/dz = MN + S using backward Euler method, M is squa
     return N
 
 
-# In[9]:
+# In[19]:
 
 
-N = back_Euler(S_trans)
+n = back_Euler(S_int_E)
 
 
-# In[10]:
+# In[ ]:
 
 
-with open('N.txt', 'a') as f:
+
+
+
+# In[20]:
+
+
+N = np.zeros((len(n), len(n[0])))
+for i in range(len(n)):
+    for j in range(len(n[0])):
+        N[i][j] = n[i][j] / (E[j+1] - E[j])
+
+
+# In[ ]:
+
+
+
+
+
+# In[21]:
+
+
+N_in_t = [[-N[i][j]*(1+z[i])*H[i] for j in range(len(N[0]))] for i in range(len(N))]
+
+
+# In[22]:
+
+
+NE = np.zeros((len(N), len(N[0])))
+for i in range(len(N)):
+    for j in range(len(N[0])):
+        NE[i][j] = E_mid[j] * E_mid[j] * N_in_t[i][j]
+
+
+# In[23]:
+
+
+NE_data = pd.DataFrame(data=NE, index=z, columns=E_mid)
+
+
+# In[24]:
+
+
+plt.figure(figsize = (12,12))
+sns.heatmap(NE_data)
+
+
+# In[ ]:
+
+
+
+
+
+# In[16]:
+
+
+N_dataframe = pd.DataFrame(data=N_in_t, index=z, columns=E_mid)
+
+
+# In[17]:
+
+
+plt.figure(figsize = (12,12))
+sns.heatmap(N_dataframe)
+
+
+# In[23]:
+
+
+# P = -integrate(E(dN/dt V + N dV/dt)dE dt/dV)
+# V = 1/V dV/dt = 3H - dlnDelta/dt -> V = 1/(3H-dlnDelta/dt) dV/dt
+# P = -integrate(E(dN/dt 1/(3H-dlnDelta/dt) + N)dE)
+
+# N[i][j]: N[i] donte to same z and different E
+
+for i in range(mstep-1): # z
+    P = 0 # in cgs unit, 1 dyne/cm^2 = 0.1 Pa
+    
+    for j in range(mstep): # E
+        dNdz = (N[i+1][j] - N[i][j]) / (z[i+1] - z[i])
+        P += -E_mid[j] * (dNdz / (3 * H[i] - dDdz[i]) + N[i][j]) * (E[j+1] - E[j])
+        
+    print(f'P({i}) = {P}')
+
+
+# In[24]:
+
+
+with open('N.txt', 'w') as f:
     for i in range(mstep):
         for j in range(mstep):
             f.write(str(N[i][j])+' ')
         f.write('\n')
 f.close()
+
+
+# In[ ]:
+
+
+
 
