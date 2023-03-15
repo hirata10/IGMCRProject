@@ -37,10 +37,12 @@ class XCosmo:
   def overdensity_evol(self, zi, delta_lin, nstep):
     self.z_grid = numpy.exp(numpy.linspace(0, numpy.log(1.+zi), nstep))[::-1]-1.
     self.Delta_grid = numpy.zeros((nstep,))
+    self.Delta_grid[:] = 200.
     xv = [1.-delta_lin/3./(1+zi), -delta_lin/3./(1+zi)]
     self.Delta_grid[0] = 1./xv[0]**3
     for i in range(nstep-1):
       dt,xv = self.Rdd(self.z_grid[i], self.z_grid[i+1], xv)
+      if xv[0]<180**(-1/3): break
       self.Delta_grid[i+1] = 1./xv[0]**3
 
 def test():

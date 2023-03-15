@@ -3,7 +3,7 @@
 
 # In[2]:
 
-
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -36,16 +36,19 @@ rho_crit = 3 * H_0 * H_0 / 8 / np.pi / G
 nstep = 199 # redshift grid
 mstep = 199 # energy grid
 
+# command line arguments:
+# linear overdensity at z=0
+deltalin0 = float(sys.argv[1])
 
 # In[3]:
 
 
 # calculate overdensity evolution
 C = LCDMSphere.XCosmo(0.6774, 0.319)
-C.overdensity_evol(15., -10., nstep+1)
+C.overdensity_evol(15., deltalin0, nstep+1)
 z_list = C.z_grid # redshift grid
 delta_b = C.Delta_grid # overdensity of baryon
-Delta_list = np.array([1 + x for x in delta_b]) # relative overdensity of baryon - grid
+Delta_list = np.array([x for x in delta_b]) # relative overdensity of baryon - grid
 ln_Delta = [np.log(x) for x in Delta_list]
 
 dDdz = np.zeros((nstep, )) # d ln(Delta)/dz
@@ -125,8 +128,22 @@ E_minus[0] = E_minus[1] / (E[1]/E[0])
 
 S = np.loadtxt("source_term.txt") # in 'same columns, same redshift; same row, same energy' format 
 S = np.delete(S, 0, axis=1) 
-Sz = [[S[i][j] / (-(1 + z[j]) * H[j]) for j in range(nstep)] for i in range(mstep)]
+Sz = [[S[i][j] / (-(1 + z[j]) * H[j]) * Delta[j] for j in range(nstep)] for i in range(mstep)]
 
+#print('z', z_list, len(z_list))
+#print('E', E, np.size(E))
+#print('E^2 S[iE,100] (eV/cm^3/dz) at', z_list[100], ':', -np.array(Sz)[:,100]*E_mid**2/1.602e-12)
+#print('theta', theta[100], '∆', Delta[100], 'H', H[100])
+
+thisA3 = np.zeros((mstep,mstep))
+for j in range(mstep):
+  for i in range(mstep):
+    if E[j] >= 2 * E[i]:
+      thisA3[i,j] = A3(E[i], E[j], z_list[100], H[100]) * E[i]/E[j] * E[i]
+  thisA2 = A2(E[j], z_list[100], Delta[100], theta[100], H[100])
+  #print('{:12.5E} {:12.5E} {:12.5E}'.format(E[j], thisA2, np.sum(thisA3[:,j])*E[j]*np.log(1e5)/199/thisA2))
+from astropy.io import fits
+fits.PrimaryHDU(thisA3).writeto('a3.fits', overwrite=True)
 
 # In[9]:
 
@@ -148,21 +165,24 @@ def get_M(z, Delta, theta, H): # parameters that only depend on redshift
                 dE_m = E_minus[j+1] - E_minus[j]
         
                 if j == i: # subcribe of n is equal to j
-                    M[i][j] += A1_ij - A2_ij_m/dE
+                    M[i][j] += A1_ij - A2_ij_m/dE_m
                 if j == i+1:
-                    M[i][j] += A2_ij_p/dE_p
+                    M[i][j] += A2_ij_m/dE_m
                 
             if E[j] >= 2 * E[i]:
-                M[i][j] += A3(E[i], E[j], z, H) # integrate E_p from 2E
+                M[i][j] += A3(E[i], E[j], z, H) * (E_plus[i]-E_minus[i]) # integrate E_p from 2E
                 
     return M
 
+fits.PrimaryHDU(get_M(z_list[100],Delta[100],theta[100],H[100])).writeto('M.fits', overwrite=True)
 
 # In[10]:
 
 
 SzdE = [[Sz[i][j]*(E_plus[i]-E_minus[i]) for j in range(nstep)] for i in range(mstep)]
+SzdE = np.array(SzdE).reshape(mstep,nstep)
 
+fits.PrimaryHDU(SzdE).writeto('SzdE.fits', overwrite=True)
 
 # In[20]:
 
@@ -172,6 +192,7 @@ def back_Euler(): # solve dn/dz = Mn + S using backward Euler method, M is squar
     I = np.identity(mstep)
     
     for j in range(1, nstep): # initialize the first column to 0 with z[0], start from z[1]
+        #print('iter', j, 'of', nstep)
         n_jm = np.zeros((mstep,1)) # partition column vector with redshift z[j-1]
         for i in range(mstep):
             n_jm[i] = n[i][j-1]
@@ -182,27 +203,36 @@ def back_Euler(): # solve dn/dz = Mn + S using backward Euler method, M is squar
         for i in range(mstep):
             S_j[i] = SzdE[i][j] # under same redshift, vari from different energy
         
-        dzS = np.dot(dz, S_j)
-        n_jm_plus_dzS = np.zeros((mstep, 1))
+        dzS = dz*S_j
+        n_jm_plus_dzS = np.zeros((mstep,))
         for i in range(mstep):
             n_jm_plus_dzS[i] = n_jm[i] + dzS[i]
             
         M_j = get_M(z[j], Delta[j], theta[j], H[j]) # M matrix only depend on redshift
             
-        dzM = np.dot(dz, M_j)
+        dzM = dz*M_j
         I_minus_dzM = np.zeros((mstep,mstep))
         for i in range(mstep):
             for k in range(mstep):
                 I_minus_dzM[i][k] = I[i][k]-dzM[i][k]
                 
-        I_m_inv = np.linalg.pinv(I_minus_dzM)
+        I_m_inv = np.linalg.inv(I_minus_dzM)
         
-        n_j = np.dot(I_m_inv, n_jm_plus_dzS)
+        n_j = I_m_inv@n_jm_plus_dzS
     
-        n = np.hstack((n,n_j))
+        n = np.hstack((n,n_j.reshape(mstep,1)))
         
     return n
 
+n = back_Euler()
+fits.PrimaryHDU(n).writeto('n.fits', overwrite=True)
+E__dE = E/(E_plus-E_minus).flatten()
+fits.PrimaryHDU(np.log10(1e-49+n*E__dE[:-1,None])).writeto('lognE.fits', overwrite=True)
+utot = np.sum(n*E[:-1,None], axis=0)
+for j in range(nstep):
+  nbary = omega_b_0 * (1 + z_list[j])**3 * Delta[j] * rho_crit / m_p
+  print('{:4d} {:7.4f} {:9.5f} {:11.5E} {:11.5E}'.format(j, z_list[j], Delta[j], utot[j], utot[j]/nbary/1.602e-12))
+exit()
 
 # In[ ]:
 

@@ -163,10 +163,10 @@ read_data()
 
 # calculate overdensity evolution
 C = LCDMSphere.XCosmo(0.6774, 0.319)
-C.overdensity_evol(15., -10., 200)
+C.overdensity_evol(15., 0., 200)
 z_list = C.z_grid # redshift grid
 delta_b = C.Delta_grid # overdensity of baryon
-Delta_list = np.array([1 + x for x in delta_b]) # relative overdensity of baryon - grid
+Delta_list = np.array([x for x in delta_b]) # relative overdensity of baryon - grid
 ln_Delta = [np.log(x) for x in Delta_list]
 
 dDdz = np.zeros((len(z_list) - 1, )) # d ln(Delta)/dz
