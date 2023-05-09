@@ -24,7 +24,7 @@ f_H = 0.76 # hydrogen fraction
 Y_He = 0.24
 
 z_reion_He = 3 # redshift that He is fully ionized
-z_reion_H = 11 # redshift that H is fully ionized
+z_reion_H = 8 # redshift that H is fully ionized
 
 aR = 8 * np.pi**5 * k**4 / (15 * c**3 * h**3) # radiation constant
 
