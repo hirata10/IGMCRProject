@@ -82,7 +82,7 @@ class IGM_N:
             self.filename = "source_term_Haardt.txt"
         
         # calculate overdensity evolution
-        C = LCDMSphere.XCosmo(0.6774, 0.319)
+        C = LCDMSphere.XCosmo(0.674, 0.315)
         C.overdensity_evol(15., deltalin0, nstep+1)
         self.z_list = C.z_grid # redshift grid
         delta_b = C.Delta_grid # overdensity of baryon
