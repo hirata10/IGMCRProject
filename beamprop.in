@@ -1,0 +1,36 @@
+set term postscript enhanced 22 eps color
+set output "beamprop.eps"
+set size 2,1.4
+set origin 0,0
+set multiplot
+set size 1,1.4
+set origin 0,0
+set grid
+set xrange [-8:-3]; set xtics 1
+set yrange [-22:-10]; set ytics 1
+set xlabel "log_{10} {/Symbol q} [radians]"
+set ylabel "log_{10} n<1/{/Symbol g}>P({/Symbol W}) [cm^{-3} sr^{-1}]"
+set style line 1 lt 1 lw 2 pt 1 ps 1 dt 1 lc rgb "#ff0000"
+set style line 2 lt 1 lw 2 pt 1 ps 1 dt 2 lc rgb "#a06000"
+set style line 3 lt 1 lw 2 pt 1 ps 1 dt 3 lc rgb "#20a000"
+set style line 4 lt 1 lw 2 pt 1 ps 1 dt 4 lc rgb "#00a0a0"
+set style line 5 lt 1 lw 2 pt 1 ps 1 dt 5 lc rgb "#0000ee"
+set style line 6 lt 1 lw 2 pt 1 ps 1 dt 6 lc rgb "#ff00ff"
+plot\
+ "ni.dat" using (log10($1)):(log10($12)) with lines title "13" ls 1,\
+ "ni.dat" using (log10($1)):(log10($10)) with lines title "12" ls 2,\
+ "ni.dat" using (log10($1)):(log10($8)) with lines title "11" ls 3,\
+ "ni.dat" using (log10($1)):(log10($6)) with lines title "10" ls 4,\
+ "ni.dat" using (log10($1)):(log10($4)) with lines title "9" ls 5,\
+ "ni.dat" using (log10($1)):(log10($2)) with lines title "8" ls 6
+set origin 1,0
+set xlabel "log_{10} {/Symbol W}_x [radians]"
+set ylabel "log_{10} -d[n<1/{/Symbol g}>P({/Symbol W}_x)]/d{/Symbol W}_x [cm^{-3} rad^{-2}]"
+plot\
+ "deriv_array.dat" using (log10($1)):(log10(-$12)) with lines title "13" ls 1,\
+ "deriv_array.dat" using (log10($1)):(log10(-$10)) with lines title "12" ls 2,\
+ "deriv_array.dat" using (log10($1)):(log10(-$8)) with lines title "11" ls 3,\
+ "deriv_array.dat" using (log10($1)):(log10(-$6)) with lines title "10" ls 4,\
+ "deriv_array.dat" using (log10($1)):(log10(-$4)) with lines title "9" ls 5,\
+ "deriv_array.dat" using (log10($1)):(log10(-$2)) with lines title "8" ls 6
+unset multiplot
