@@ -2,7 +2,7 @@ import numpy
 import pickle
 from astropy.io import fits
 
-with open('rate.pkl', 'rb') as f:
+with open('rate_10Mpc.pkl', 'rb') as f:
   rate_arr = pickle.load(f)
 
 gamma_e_arr = numpy.logspace(8, 14, 400) / 5.11e5

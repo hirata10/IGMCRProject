@@ -32,7 +32,7 @@ z2 = (1 + z) / 3
 
 ## Cell 2: load the arrays
 
-with open('rate.pkl', 'rb') as f:
+with open('rate_10Mpc.pkl', 'rb') as f:
     rata_arr = pkl.load(f)
     
 rate_arr = np.array(rata_arr)
