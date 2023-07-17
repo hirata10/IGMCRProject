@@ -1,0 +1,35 @@
+set term postscript enhanced 22 eps color
+set output "transverse.eps"
+set size 2,1.2
+set origin 0,0
+set multiplot
+set size 1,1.2
+set style line 1 lt 1 lw 2 dt 1 pt 1 ps 1 lc rgb "#0000aa"
+set style line 2 lt 1 lw 1.5 dt 2 pt 1 ps 1 lc rgb "#008000"
+set style line 3 lt 1 lw 1.5 dt 3 pt 1 ps 1 lc rgb "#700060"
+set logscale; set grid
+set xrange [1e8:1e13]
+set format x "10^{%T}"
+set format y "10^{%T}"
+set xlabel "E = m_ec^2{/Symbol g} [eV]"
+set ylabel "t_C d/dt <p@^2_{/Symbol \\\^}> / (m_ec)^2"
+set yrange [1e-6:1e-1]
+mc2 = 5.11e5
+set key at 1e10,.065
+set title "Transverse momentum diffusion rate (z=2)"
+plot\
+  "transverse-cmbonly.dat" using ($1*mc2):3 with lines title "CMB" ls 3,\
+  "transverse-eblonly.dat" using ($1*mc2):3 with lines title "EBL" ls 2,\
+ "transverse.dat" using ($1*mc2):3 with lines title "Total" ls 1
+set origin 1,0
+set xlabel "E_f = m_ec^2{/Symbol g}_f [eV]"
+set ylabel "{/Symbol q}_{rms} for cooling to E_f"
+set yrange [1e-9:1e-5]
+set key at 5e12,5e-6
+set title "Angular diffusion scale (z=2)"
+plot\
+  "transverse-cmbonly.dat" using ($1*mc2):4 with lines title "CMB" ls 3,\
+  "transverse-eblonly.dat" using ($1*mc2):4 with lines title "EBL" ls 2,\
+ "transverse.dat" using ($1*mc2):4 with lines title "Total" ls 1
+unset multiplot
+
