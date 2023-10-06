@@ -4,8 +4,7 @@ LCSMSphere.py: Density evolution
 
 Energy_loss_class.py: Energy loss
 
-get_source.ipynb: Source term; We generate "source_term_Khaire.txt" using Khaire's EBL model (KS_2018_EBL) 
-and "source_term_Haardt.txt" using Haardt's EBL model (UBV.out.txt)
+get_source.ipynb: Source term; We generate "source_term_Khaire.txt" using Khaire's EBL model (KS_2018_EBL) and "source_term_Haardt.txt" using Haardt's EBL model (UBV.out.txt)
 
 IGM.py: The main class
 
@@ -20,5 +19,4 @@ all variables should be individual values rather than array or list
 
 temp_history.py: IGM temperature profile
 
-result.ipynb: The default calculating using different over- (or under-) density at different redshift using different EBL model 
-and computing the contribution of electron cosmic ray to general IGM using Khaire's EBL model
+result.ipynb: The default calculating using different over- (or under-) density at different redshift using different EBL model and computing the contribution of electron cosmic ray to general IGM using Khaire's EBL model
