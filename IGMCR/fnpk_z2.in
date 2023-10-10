@@ -1,0 +1,21 @@
+set term postscript enhanced 18 eps color
+set output "fnpk_z2.eps"
+set logscale x
+set xrange [1e-9:1e-3]
+set xlabel 'k_{/Symbol \136} [cm^{-1}]'
+set yrange [0:1.2]; set ytics .2
+set ylabel 'F_{NP}(k_{/Symbol \136})'
+set grid
+unset key
+set size 1,.65
+set style line 1 lt 1 lw 3 lc rgb "#400000"
+set style line 2 pt 11 ps 2 lc rgb "#808080"
+set format x "10^{%T}"
+set label "k_D" at 4.5e-6,1.12
+set label "{/Symbol w}_p/c" at 3.6e-9,1.12
+plot\
+ "fnpk_z2.dat" using 1:2 with lines ls 1,\
+ "-" using 1:2 with points ls 2
+4.60179957559806e-09 1.04
+5.385257015560704e-06 1.04
+e

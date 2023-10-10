@@ -1,0 +1,61 @@
+set term postscript enhanced 24 eps color
+set output "allgfunc.eps"
+set size 3,1.5
+set origin 0,0
+set multiplot
+set size 1,1.5
+set grid
+c = 2.99792458e10
+set xlabel "v_{ph} [cm s^{-1}]"
+set logscale
+set ylabel "~G{.7-}_{cons}(v_{ph}) [s^{-2}]"
+set style line 1 lt 1 lw 4.5 dt 1 lc rgb "#000000"
+set style line 2 lt 1 lw 4.5 dt 2 lc rgb "#000000"
+set style line 3 lt 1 lw 2.5 dt 3 lc rgb "#ff00cf"
+set style line 4 lt 1 lw 2.5 dt 3 lc rgb "#ff00cf"
+set style line 5 lt 1 lw 2.5 dt 4 lc rgb "#0040a0"
+set style line 6 lt 1 lw 2.5 dt 4 lc rgb "#0040a0"
+set style line 7 lt 1 lw 2.5 dt 5 lc rgb "#80a000"
+set style line 8 lt 1 lw 2.5 dt 5 lc rgb "#80a000"
+set format x "10^{%T}"
+set format y "10^{%T}"
+set ytics 10
+set xrange [1e4:5e10]
+set yrange [1e-3:1e5]
+set key at 5e5,1e4
+plot\
+  "allgfunc.dat" using 1:5 with lines ls 1 title "full",\
+  "allgfunc.dat" using 1:(-$5) with lines ls 2 notitle,\
+  "allgfunc.dat" using 1:2 with lines ls 3 title "|e|",\
+  "allgfunc.dat" using 1:(-$2) with lines ls 4 notitle,\
+  "allgfunc.dat" using 1:3 with lines ls 5 title "|p|",\
+  "allgfunc.dat" using 1:(-$3) with lines ls 6 notitle,\
+  "allgfunc.dat" using 1:4 with lines ls 7 title "|{/Symbol a}|",\
+  "allgfunc.dat" using 1:(-$4) with lines ls 8 notitle
+set origin 1,0
+set ylabel "~g{.4-}_{dist}(v_{ph}) [s cm^{-1}]"
+set yrange [1e-22:3e-6]
+set key at 3e10,1e-7
+plot\
+  "allgfunc.dat" using 1:9 with lines ls 1 title "full",\
+  "allgfunc.dat" using 1:(-$9) with lines ls 2 notitle,\
+  "allgfunc.dat" using 1:6 with lines ls 3 title "e",\
+  "allgfunc.dat" using 1:(-$6) with lines ls 4 notitle,\
+  "allgfunc.dat" using 1:7 with lines ls 5 title "p",\
+  "allgfunc.dat" using 1:(-$7) with lines ls 6 notitle,\
+  "allgfunc.dat" using 1:8 with lines ls 7 title "{/Symbol a}",\
+  "allgfunc.dat" using 1:(-$8) with lines ls 8 notitle
+set origin 2,0
+set ylabel "~g{.4-}_{damp}(v_{ph}) [cm^{-2}]"
+set yrange [1e-27:3e-11]
+set key at 3e10,1e-11
+plot\
+  "allgfunc.dat" using 1:13 with lines ls 1 title "full",\
+  "allgfunc.dat" using 1:(-$13) with lines ls 2 notitle,\
+  "allgfunc.dat" using 1:10 with lines ls 3 title "e",\
+  "allgfunc.dat" using 1:(-$10) with lines ls 4 notitle,\
+  "allgfunc.dat" using 1:11 with lines ls 5 title "p",\
+  "allgfunc.dat" using 1:(-$11) with lines ls 6 notitle,\
+  "allgfunc.dat" using 1:12 with lines ls 7 title "{/Symbol a}",\
+  "allgfunc.dat" using 1:(-$12) with lines ls 8 notitle
+unset multiplot
