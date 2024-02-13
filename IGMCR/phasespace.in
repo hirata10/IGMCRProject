@@ -22,8 +22,8 @@ set ytics ("10^{-18}" -18,\
   "10^{-11}" -11, "10^{-10}" -10, "10^{-9}" -9, "10^{-8}" -8, "10^{-7}" -7, "10^{-6}" -6,\
   "10^{-5}" -5)
 set label "thermal" at -2.4,-5
-set label "photoionization" at -1.7,-12.3
-set label "cosmic rays" at .18,-14.3
+set label "photoionization" at -1.7,-12.3 rotate by 45
+set label "cosmic rays" at .18,-12.3
 plot\
  "phasespace_e_z2.dat" using (log10($1/p0)):(log10($1**3*$4*4.*pi*log(10.))) with lines ls 2,\
  "phasespace_e_z2.dat" using (log10($1/p0)):(log10($1**3*$6*4.*pi*log(10.))) with lines ls 3,\
