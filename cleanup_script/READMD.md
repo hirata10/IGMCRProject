@@ -13,3 +13,5 @@ IGM.py will generator 5 npy file: energy density utot, energy per baryon in eV E
 (working on callable): generate F_NP
 
 distribution_diff.py will generate electron distribution counting angular broadening by Compton scattering and Coulomb scattering
+
+(working on): damp rate by beam itself and by CRe
