@@ -12,9 +12,11 @@ run python IGM.py --nstep --mstep --E_min --E_max --source_model --deltalin0
 
 the default setting is reshift bins nstep = 399, energy bins mstep = 399, E_min = 1e-11 erg, E_max = 1e-3 erg,
 
-source_model = '0' for Khaire's model ('1' for Haardt's mode)
+source_model = '0' for Khaire's model ('1' for Haardt's mode),
 
-and overdensity evolution deltalin0 = 0 for mean density (> 0 for overdensity, and < 0 for underdensity)
+overdensity evolution deltalin0 = 0 for mean density (> 0 for overdensity, and < 0 for underdensity),
+
+and saving path = ''
 
 Please make sure the parameters are consistent with get_source.py
 """
@@ -228,11 +230,11 @@ def main(args):
     utot, E_eV = IGM.get_utot(n)
     N, P_e, P_eV = IGM.get_P(n)
 
-    np.save(f'utot_{args.deltalin0}_{args.source_model}.npy', utot)
-    np.save(f'E_eV_{args.deltalin0}_{args.source_model}.npy', E_eV)
-    np.save(f'N_{args.deltalin0}_{args.source_model}.npy', N)
-    np.save(f'P_e_{args.deltalin0}_{args.source_model}.npy', P_e)
-    np.save(f'P_eV_{args.deltalin0}_{args.source_model}.npy', P_eV)
+    np.save(f'{args.savePATH}utot_{args.deltalin0}_{args.source_model}.npy', utot)
+    np.save(f'{args.savePATH}E_eV_{args.deltalin0}_{args.source_model}.npy', E_eV)
+    np.save(f'{args.savePATH}N_{args.deltalin0}_{args.source_model}.npy', N)
+    np.save(f'{args.savePATH}P_e_{args.deltalin0}_{args.source_model}.npy', P_e)
+    np.save(f'{args.savePATH}P_eV_{args.deltalin0}_{args.source_model}.npy', P_eV)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -245,6 +247,8 @@ if __name__ == '__main__':
     parser.add_argument('--source_model', type=str, help="0 for Khaire's model, 1 for Haardt's model", default='0')
 
     parser.add_argument('--deltalin0', type=float, help='overdensity evolution, 0 for mean density, > 0 for overdensity, and < 0 for underdensity', default=0)
+    
+    parser.add_argument('--savePATH', type=str, help='saving path for the result', default='')
 
     args = parser.parse_args()
     
