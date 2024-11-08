@@ -153,11 +153,17 @@ def main(args):
 
     Z_proj = 1
 
+    # engineering of M-matrix to get stable exp calculation
+    P = np.diag(np.sqrt(1/Omega))
+    L = np.linalg.inv(P)@M@P
+    eigenvalues_L, eigenvectors_L = np.linalg.eigh(L)
+    R_L = eigenvectors_L.copy()
+    lambda_l = eigenvalues_L.copy()
+
     eigenvalues, eigenvectors = np.linalg.eig(M)
-    V = eigenvectors
-    A = np.diag(eigenvalues) # sqrt(A[i][i])
+    l = np.sqrt(eigenvalues)
+    V = eigenvectors.copy()
     V_inv = np.linalg.inv(V)
-    l = np.array([np.sqrt(A[i][i]) for i in range(len(A))])
 
     t_arr = args.T_arr
     t_num = len(t_arr)
@@ -225,30 +231,32 @@ def main(args):
 
     nij = np.zeros((t_num, 400, 400))
     time_start = time.time()
-    for k in range(t_num):
-        print(f'time {k} {t_arr[k]:.1e}', end = ' ')
+    # for k in range(t_num):
+    #     print(f'time {k} {t_arr[k]:.1e}', end = ' ')
     
-        for j in range(1, 400):
-            print(f'j = {j}, time = {(time.time()-time_start)/60}')
-            M_new = np.zeros((400, 400, 400))
-            for jp in range(j, 399):
-                theta_rms = np.sqrt(prefix_sums[j] - prefix_sums[jp+1]) # from jp to j
-                M_expm = scipy.linalg.expm(-theta_rms**2/4 * M)
+    for j in range(1, 400):
+        print(f'j = {j}, time = {(time.time()-time_start)/60}')
+        M_new = np.zeros((400, 400, 400))
+        for jp in range(j, 399):
+            theta_rms = np.sqrt(prefix_sums[j] - prefix_sums[jp+1]) # from jp to j
+            #M_expm = scipy.linalg.expm(-theta_rms**2/4 * M)
+            M_expm = P@R_L@np.diag(np.exp(-theta_rms**2/4*lambda_l))@R_L.T@np.linalg.inv(P)
             
-                ### new element for columb scattering
-                new_EV = np.zeros((len(l)))
-                for x in range(len(l)):
-                    new_EV[x] = np.exp(T_ij(l[x], j, jp)) # from jp to j, eq 39 exp part
-                new_D = np.diag(new_EV)
-                columb = np.dot(np.dot(V, new_D), V_inv)
+            ### new element for columb scattering
+            new_EV = np.zeros((len(l)))
+            for x in range(len(l)):
+                new_EV[x] = np.exp(T_ij(l[x], j, jp)) # from jp to j, eq 39 exp part
+            new_D = np.diag(new_EV)
+            columb = np.dot(np.dot(V, new_D), V_inv)
             
-                M_new[jp] = M_expm @ columb
+            M_new[jp] = M_expm @ columb
             
-                if np.isnan(M_new[jp,:,:].any()): print('test', j, jp, np.isnan(M_new[jp,:,:].any()))
+            if np.isnan(M_new[jp,:,:].any()): print('test', j, jp, np.isnan(M_new[jp,:,:].any()))
 
+        for k in range(t_num):
             for i in range(400):
                 nij[k][i][j-1] = get_nij(i, j, t_arr[k], M_new)
-        print('t = ', (time.time() - time_start) / 60)
+    print('t = ', (time.time() - time_start) / 60)
 
     ## save data
     fits.PrimaryHDU(nij).writeto(f'{args.savePATH}nij.fits', overwrite=True)
@@ -273,7 +281,7 @@ def main(args):
     mc2 = np.zeros((400, t_num+1))
     mc2[:,0] = theta_e_arr
     mc2[:,1:] = deriv_array
-    np.savetxt(f'{args.savePATH}deriv_array.dat', mc2)
+    np.savetxt(f'{args.savePATH}distribution_with_diffusion.dat', mc2)
 
     for i in range(t_num):
         plt.plot(Omega_x, -mc2[:, 1+i], label=f'{t_arr[i]:.1e}')
