@@ -33,6 +33,22 @@ E_e = m_e * c * c
 rho_crit = 3 * H_0 * H_0 / 8 / np.pi / G
 e = 2.718281828459 # base of natural log
 
+"""
+This script will generate the beam distribution distribution_with_diffusion (dat and pdf), for interplation, please check our paper 
+
+run python damp_rate.py --nstep --mstep --E_min --E_max --source_model --deltalin0 --z --readPATH --savePATH
+
+the default setting is reshift bins nstep = 399, energy bins mstep = 399, E_min = 1e-11 erg, E_max = 1e-3 erg,
+
+source_model = '0' for Khaire's model ('1' for Haardt's mode),
+
+overdensity evolution deltalin0 = 0 for mean density (> 0 for overdensity, and < 0 for underdensity), redshfit z = 2,
+
+saving path = '', and reading path = '' (should be the same as the saving path of IGM.py)
+
+Please make sure the parameters are consistent with other files
+"""
+
 # ### generate theta_rms
 
 def compton_f(x):

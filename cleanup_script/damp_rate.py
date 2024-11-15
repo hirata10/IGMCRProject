@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import pandas as pd
+import h5py
 import matplotlib.pyplot as plt
 import argparse
 import bisect
@@ -10,15 +10,18 @@ import Energy_loss_class
 import IGM
 
 """
-This script will generator 2 cvs files and 2 figures: damp_rate_largek_{z}_{deltalin0}(csv and pdf) for k = 0.8 to 5 times omega_p/c, and damp_rate_zoomk_{z}_{deltalin0}(csv and pdf) for k = 0.995 to 1.1 times omega_p/c
+This script will generate a .h5 file storing 'k': wavenumber, 'k_norm': normalized wavenumber k/(omega_p/c), and 'rate': Landau damping rate by cosmic ray electrons
+If the --k_file is not None, it will use the desired k and store the .h5 file as damp_rate_otherk_{z}_{deltalin0}.h5; otherwise it will use default: damp_rate_largek_{z}_{deltalin0}(h5 and pdf) for k = 0.8 to 5 times omega_p/c, and damp_rate_zoomk_{z}_{deltalin0}(h5 and pdf) for k = 0.995 to 1.1 times omega_p/c
 
-run python damp_rate.py --nstep --mstep --E_min --E_max --source_model --deltalin0 --z
+run python damp_rate.py --nstep --mstep --E_min --E_max --source_model --deltalin0 --z --k_file --readPATH --savePATH
 
 the default setting is reshift bins nstep = 399, energy bins mstep = 399, E_min = 1e-11 erg, E_max = 1e-3 erg,
 
 source_model = '0' for Khaire's model ('1' for Haardt's mode),
 
 overdensity evolution deltalin0 = 0 for mean density (> 0 for overdensity, and < 0 for underdensity), redshfit z = 2,
+
+k_file = None,
 
 saving path = '', and reading path = '' (should be the same as the saving path of IGM.py)
 
@@ -66,11 +69,14 @@ def main(args):
 
     IGM_00 = IGM.IGM_N(deltalin0, source_model, args.nstep, args.mstep, args.E_min, args.E_max)
 
-    N = np.load(f'{args.readPATH}N_{deltalin0}_{source_model}.npy')
+    N = np.load(f'{args.readPATH}N_{deltalin0:.0f}_{source_model}.npy')
     
     index_z = find_idx(z, IGM_00.z)
+    print('index_z', index_z)
+    print('z', IGM_00.z[index_z])
 
     omega_b = omega_b_0 * (1 + z)**3
+    print('omega_b', omega_b)
     mean_n_b = 3 * omega_b * H_0 * H_0 / (8 * np.pi * G * m_p) # mean number density of baryons at the redshift
     n_b = mean_n_b * IGM_00.Delta[index_z]
 
@@ -85,10 +91,17 @@ def main(args):
         n_e = 0
     
     omega_p = (4 * np.pi * r0 * n_e)**0.5 * c
+    print('omega_p', omega_p)
+    
+    E_min_record = []
 
     def get_rate(k):
-        if k<=omega_p/c: return 0
+        if k<=omega_p/c: 
+            E_min_record.append(0)
+            return 0
         E_min = E_e * ((1 - omega_p**2 / c**2 / k**2)**(-0.5) - 1)
+        E_min_record.append(E_min)
+        if E_min > np.max(IGM_00.E): return 0
     
         n_e_th = n_e
         co1 = -np.pi / 4 * omega_p * (omega_p / c / k)**3 * E_e / n_e_th
@@ -98,6 +111,7 @@ def main(args):
         else:
             index_E1 = np.where(IGM_00.E < E_min)[-1][-1]
         index_E2 = np.where(IGM_00.E > E_min)[0][0]
+        if index_E2 == args.mstep: return 0
         N_Emin = (N[index_E2][index_z] - N[index_E1][index_z])/(IGM_00.E[index_E2]-IGM_00.E[index_E1]
                                                      ) * (E_min-IGM_00.E[index_E1]) + N[index_E1][index_z]
     
@@ -118,50 +132,83 @@ def main(args):
             co3 = 1
         
         return co1 * co2 * co3
+    
+    if args.k_file is None:
+        k = omega_p/c * np.linspace(.8,5,1000)
+        rate = np.zeros((len(k), ))
+        for i in range(len(k)):
+            rate[i] = get_rate(k[i])
 
-    k = omega_p/c * np.linspace(.8,5,1000)
-    rate = np.zeros((len(k), ))
-    for i in range(len(k)):
-        rate[i] = get_rate(k[i])
+        plt.plot(k/(omega_p/c), -rate*1e6, color = 'black')
+        plt.title('Landau damping by cosmic rays at $z=2$, $\Delta=1$', fontsize = 14)
+        plt.xlabel('scaled wave number $ck/\omega_{\mathrm{p}}$', fontsize = 14)
+        plt.ylabel('damping rate $-\Im \omega \ [10^{-6}\,\mathrm{s^{-1}}]$', fontsize = 14)
+        plt.grid(color = 'green', linestyle = '-.', linewidth = 0.5)
+        plt.xlim([.8,5])
+        plt.xticks(fontsize = 14)
+        plt.yticks(fontsize = 14)
+        plt.savefig(f'{args.savePATH}damp_rate_largek_{z}_{deltalin0}.pdf', bbox_inches='tight', pad_inches=0.15)
+        plt.clf()
+        
+        with h5py.File(f'{args.savePATH}damp_rate_largek_{z:.1f}_{deltalin0:.1f}.h5', 'w') as h5f:
+            h5f.create_dataset('k', data=k, compression="gzip")
+            h5f.create_dataset('k_norm', data=k/(omega_p/c), compression="gzip")
+            h5f.create_dataset('rate', data=-rate, compression="gzip")
 
-    plt.plot(k/(omega_p/c), -rate*1e6, color = 'black')
-    plt.title('Landau damping by cosmic rays at $z=2$, $\Delta=1$', fontsize = 14)
-    plt.xlabel('scaled wave number $ck/\omega_{\mathrm{p}}$', fontsize = 14)
-    plt.ylabel('damping rate $-\Im \omega \ [10^{-6}\,\mathrm{s^{-1}}]$', fontsize = 14)
-    plt.grid(color = 'green', linestyle = '-.', linewidth = 0.5)
-    plt.xlim([.8,5])
-    plt.xticks(fontsize = 14)
-    plt.yticks(fontsize = 14)
-    plt.savefig(f'{args.savePATH}damp_rate_largek_{z}_{deltalin0}.pdf', bbox_inches='tight', pad_inches=0.15)
-    plt.clf()
+        k = omega_p/c * np.linspace(.995,1.1,1000)
+        rate = np.zeros((len(k), ))
+        for i in range(len(k)):
+            rate[i] = get_rate(k[i])
 
-    df = pd.DataFrame({
-        'k': k,
-        'rate': -rate
-        })
-    df.to_csv(f'{args.savePATH}damp_rate_largek_{z}_{deltalin0}.csv')
+        plt.plot(k/(omega_p/c), -rate*1e7, color = 'black')
+        plt.title(f'Landau damping by cosmic rays at $z={z}$, $\Delta={deltalin0}$ [zoom]', fontsize = 14)
+        plt.xlabel('scaled wave number $ck/\omega_{\mathrm{p}}$', fontsize = 14)
+        plt.ylabel('damping rate $-\Im \omega \ [10^{-7}\,\mathrm{s^{-1}}]$', fontsize = 14)
+        plt.grid(color = 'green', linestyle = '-.', linewidth = 0.5)
+        plt.xlim([1+1e-4,1+2e-2])
+        plt.xticks(fontsize = 14)
+        plt.yticks(fontsize = 14)
+        plt.savefig(f'{args.savePATH}damp_rate_smallk_{z}_{deltalin0}.pdf', bbox_inches='tight', pad_inches=0.15)
+        plt.clf()
+        
+        with h5py.File(f'{args.savePATH}damp_rate_smallk_{z:.1f}_{deltalin0:.1f}.h5', 'w') as h5f:
+            h5f.create_dataset('k', data=k, compression="gzip")
+            h5f.create_dataset('k_norm', data=k/(omega_p/c), compression="gzip")
+            h5f.create_dataset('rate', data=-rate, compression="gzip")
+        
+    else:
+        k_norm = np.load(args.k_file)
+        k = k_norm * omega_p / c
+        if k.ndim != 1:
+            k = k.flatten()
+        rate = np.zeros(k.shape)
+        for i in range(len(k)):
+            rate[i] = get_rate(k[i])
+        rate.reshape(k_norm.shape)
+        
+        with h5py.File(f'{args.savePATH}damp_rate_CR_otherk_{z:.1f}_{deltalin0:.1f}.h5', 'w') as h5f:
+            h5f.create_dataset('k', data=k, compression="gzip")
+            h5f.create_dataset('k_norm', data=k_norm, compression="gzip")
+            h5f.create_dataset('rate', data=-rate, compression="gzip")
+    
+#     K = np.load('../K_new.npy')
+#     K *= omega_p/c
+#     rate = np.zeros((K.shape[0], K.shape[1]))
+#     print('generating damp rate for K')
+#     for i in range(K.shape[0]):
+#         for j in range(K.shape[1]):
+#             rate[i][j] = get_rate(K[i][j])
 
-    k = omega_p/c * np.linspace(.995,1.1,1000)
-    rate = np.zeros((len(k), ))
-    for i in range(len(k)):
-        rate[i] = get_rate(k[i])
-
-    plt.plot(k/(omega_p/c), -rate*1e7, color = 'black')
-    plt.title('Landau damping by cosmic rays at $z=2$, $\Delta=1$ [zoom]', fontsize = 14)
-    plt.xlabel('scaled wave number $ck/\omega_{\mathrm{p}}$', fontsize = 14)
-    plt.ylabel('damping rate $-\Im \omega \ [10^{-7}\,\mathrm{s^{-1}}]$', fontsize = 14)
-    plt.grid(color = 'green', linestyle = '-.', linewidth = 0.5)
-    plt.xlim([.995,1.1])
-    plt.xticks(fontsize = 14)
-    plt.yticks(fontsize = 14)
-    plt.savefig(f'{args.savePATH}damp_rate_zoomk_{z}_{deltalin0}.pdf', bbox_inches='tight', pad_inches=0.15)
-    plt.clf()
-
-    df = pd.DataFrame({
-        'k': k,
-        'rate': -rate
-        })
-    df.to_csv(f'{args.savePATH}damp_rate_zoomk_{z}_{deltalin0}.csv')
+#     np.savetxt(f'{args.savePATH}rate_newk.txt', -rate)
+    
+#     K_mod = np.load('../K_modules_new.npy')
+#     K_mod *= omega_p/c
+#     rate_mod = np.zeros((len(K_mod), ))
+#     print('generating damp rate for K_mod')
+#     for i in range(len(K_mod)):
+#         rate_mod[i] = get_rate(K_mod[i])
+        
+#     np.savetxt(f'{args.savePATH}rate_mod_newk.txt', -rate_mod)
 
 
 
@@ -178,6 +225,8 @@ if __name__ == '__main__':
     parser.add_argument('--deltalin0', type=float, help='overdensity evolution, 0 for mean density, > 0 for overdensity, and < 0 for underdensity', default=0)
 
     parser.add_argument('--z', type=float, help='desired redshift', default=2)
+    
+    parser.add_argument('--k_file', type=str, help='path to normalized k file, if none, using default k', default=None)
     
     parser.add_argument('--savePATH', type=str, help='saving path for the result', default='')
     parser.add_argument('--readPATH', type=str, help='reading path for the result', default='')

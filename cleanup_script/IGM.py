@@ -230,11 +230,11 @@ def main(args):
     utot, E_eV = IGM.get_utot(n)
     N, P_e, P_eV = IGM.get_P(n)
 
-    np.save(f'{args.savePATH}utot_{args.deltalin0}_{args.source_model}.npy', utot)
-    np.save(f'{args.savePATH}E_eV_{args.deltalin0}_{args.source_model}.npy', E_eV)
-    np.save(f'{args.savePATH}N_{args.deltalin0}_{args.source_model}.npy', N)
-    np.save(f'{args.savePATH}P_e_{args.deltalin0}_{args.source_model}.npy', P_e)
-    np.save(f'{args.savePATH}P_eV_{args.deltalin0}_{args.source_model}.npy', P_eV)
+    np.save(f'{args.savePATH}utot_{args.deltalin0:.0f}_{args.source_model}.npy', utot)
+    np.save(f'{args.savePATH}E_eV_{args.deltalin0:.0f}_{args.source_model}.npy', E_eV)
+    np.save(f'{args.savePATH}N_{args.deltalin0:.0f}_{args.source_model}.npy', N)
+    np.save(f'{args.savePATH}P_e_{args.deltalin0:.0f}_{args.source_model}.npy', P_e)
+    np.save(f'{args.savePATH}P_eV_{args.deltalin0:.0f}_{args.source_model}.npy', P_eV)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
